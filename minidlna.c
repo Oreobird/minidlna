@@ -354,7 +354,6 @@ rescan:
 		{
 			start_scanner();
 			sqlite3_close(db);
-			free(children);
 			log_close();
 			freeoptions();
 			free(children);
