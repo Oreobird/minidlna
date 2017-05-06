@@ -80,6 +80,9 @@
 	"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM," \
 	"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED," \
 	"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG," \
+	"http-get:*:image/png:DLNA.ORG_PN=PNG_TN," \
+	"http-get:*:image/png:DLNA.ORG_PN=PNG_LRG," \
+	"http-get:*:image/GIF:DLNA.ORG_PN=GIF_LRG," \
 	"http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_50_AC3_ISO," \
 	"http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_60_AC3_ISO," \
 	"http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HP_HD_AC3_ISO," \
@@ -152,6 +155,10 @@
 	"http-get:*:audio/mp4:DLNA.ORG_PN=AAC_MULT5_ISO," \
 	"http-get:*:audio/L16;rate=44100;channels=2:DLNA.ORG_PN=LPCM," \
 	"http-get:*:image/jpeg:*," \
+	"http-get:*:image/png:*," \
+	"http-get:*:image/bmp:*," \
+	"http-get:*:image/gif:*," \
+	"http-get:*:image/tiff:*," \
 	"http-get:*:video/avi:*," \
 	"http-get:*:video/divx:*," \
 	"http-get:*:video/x-matroska:*," \
@@ -165,7 +172,8 @@
 	"http-get:*:audio/mp4:*," \
 	"http-get:*:audio/x-wav:*," \
 	"http-get:*:audio/x-flac:*," \
-	"http-get:*:application/ogg:*"
+	"http-get:*:application/ogg:*," \
+	"http-get:*:video/x-pn-realvideo:*"
 
 #define DLNA_FLAG_DLNA_V1_5      0x00100000
 #define DLNA_FLAG_HTTP_STALLING  0x00200000

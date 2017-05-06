@@ -365,6 +365,12 @@ mime_to_ext(const char * mime)
 				return "jpg";
 			else if( strcmp(mime+6, "png") == 0 )
 				return "png";
+			else if (strcmp(mime+6, "bmp") == 0 )
+				return "bmp";
+			else if (strcmp(mime+6, "gif") == 0 )
+				return "gif";
+			else if (strcmp(mime+6, "tiff") == 0 )
+				return "tiff";
 			break;
 		default:
 			break;
@@ -383,6 +389,7 @@ is_video(const char * file)
 		ends_with(file, ".m2t") || ends_with(file, ".mkv")   ||
 		ends_with(file, ".vob") || ends_with(file, ".ts")    ||
 		ends_with(file, ".flv") || ends_with(file, ".xvid")  ||
+		ends_with(file, ".rm") || ends_with(file, ".rmvb")   ||
 #ifdef TIVO_SUPPORT
 		ends_with(file, ".TiVo") ||
 #endif
@@ -404,7 +411,10 @@ is_audio(const char * file)
 int
 is_image(const char * file)
 {
-	return (ends_with(file, ".jpg") || ends_with(file, ".jpeg"));
+	return (ends_with(file, ".jpg") || ends_with(file, ".jpeg") ||
+		ends_with(file, ".png") || ends_with(file, ".bmp") ||
+		ends_with(file, ".tif") || ends_with(file, ".tiff") ||
+		ends_with(file, ".gif") );
 }
 
 int

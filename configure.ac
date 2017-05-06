@@ -40,8 +40,8 @@ AC_PROG_MAKE_SET
 
 # Default string definitions
 AC_DEFINE_UNQUOTED([OS_URL],"http://sourceforge.net/projects/minidlna/",[OS URL])
-AC_DEFINE_UNQUOTED([ROOTDEV_MANUFACTURER],"Justin Maggard", [Manufacturer])
-AC_DEFINE_UNQUOTED([ROOTDEV_MANUFACTURERURL],"http://www.netgear.com/", [Manufacturer URL])
+AC_DEFINE_UNQUOTED([ROOTDEV_MANUFACTURER],"Oreobird", [Manufacturer])
+AC_DEFINE_UNQUOTED([ROOTDEV_MANUFACTURERURL],"https://github.com/Oreobird", [Manufacturer URL])
 AC_DEFINE_UNQUOTED([ROOTDEV_MODELNAME],"Windows Media Connect compatible (MiniDLNA)", [Model name])
 AC_DEFINE_UNQUOTED([ROOTDEV_MODELDESCRIPTION],"MiniDLNA on " OS_NAME, [Model description])
 AC_DEFINE_UNQUOTED([ROOTDEV_MODELURL],OS_URL,[Model URL])
@@ -531,7 +531,7 @@ AC_DEFINE_UNQUOTED([OS_VERSION],"${with_osver}",[OS Version])
 
 AC_ARG_WITH(os-url,
 	AS_HELP_STRING([--with-os-url=URL],[OS URL]),
-	[with_osurl="$withval"],[with_osurl="http://www.netgear.com"])
+	[with_osurl="$withval"],[with_osurl="https://github.com/Oreobird"])
 AC_DEFINE_UNQUOTED([OS_URL],"${with_osurl}",[OS URL])
 
 

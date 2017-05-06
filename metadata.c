@@ -511,7 +511,28 @@ GetImageMetadata(const char *path, char *name)
 		return 0;
 	strip_ext(name);
 	//DEBUG DPRINTF(E_DEBUG, L_METADATA, " * size: %jd\n", file.st_size);
-
+	
+	if ( ends_with(path, "jpg") || ends_with(path, "jpeg") )
+	{
+		m.mime = strdup("image/jpeg");
+	} 
+	else if ( ends_with(path, "bmp") )
+	{
+		m.mime = strdup("image/bmp");
+	}
+	else if ( ends_with(path, "png") )
+	{
+		m.mime = strdup("image/png");
+	}
+	else if ( ends_with(path, "gif") )
+	{
+		m.mime = strdup("image/gif");
+	}
+	else if ( ends_with(path, "tif") || ends_with(path, "tiff") )
+	{
+		m.mime = strdup("image/tiff");
+	}
+#if 0
 	/* MIME hard-coded to JPEG for now, until we add PNG support */
 	m.mime = strdup("image/jpeg");
 
@@ -597,42 +618,97 @@ GetImageMetadata(const char *path, char *name)
 	//DEBUG DPRINTF(E_DEBUG, L_METADATA, " * thumbnail: %d\n", thumb);
 
 	exif_data_unref(ed);
-
+#endif
 no_exifdata:
-	/* If SOF parsing fails, then fall through to reading the JPEG data with libjpeg to get the resolution */
-	if( image_get_jpeg_resolution(path, &width, &height) != 0 || !width || !height )
+	if ( ends_with(path, "jpg") || ends_with(path, "jpeg") )
 	{
-		infile = fopen(path, "r");
-		if( infile )
+		/* If SOF parsing fails, then fall through to reading the JPEG data with libjpeg to get the resolution */
+		if( image_get_jpeg_resolution(path, &width, &height) != 0 || !width || !height )
 		{
-			cinfo.err = jpeg_std_error(&jerr);
-			jerr.error_exit = libjpeg_error_handler;
-			jpeg_create_decompress(&cinfo);
-			if( setjmp(setjmp_buffer) )
-				goto error;
-			jpeg_stdio_src(&cinfo, infile);
-			jpeg_read_header(&cinfo, TRUE);
-			jpeg_start_decompress(&cinfo);
-			width = cinfo.output_width;
-			height = cinfo.output_height;
-			error:
-			jpeg_destroy_decompress(&cinfo);
-			fclose(infile);
+			infile = fopen(path, "r");
+			if( infile )
+			{
+				cinfo.err = jpeg_std_error(&jerr);
+				jerr.error_exit = libjpeg_error_handler;
+				jpeg_create_decompress(&cinfo);
+				if( setjmp(setjmp_buffer) )
+					goto error;
+				jpeg_stdio_src(&cinfo, infile);
+				jpeg_read_header(&cinfo, TRUE);
+				jpeg_start_decompress(&cinfo);
+				width = cinfo.output_width;
+				height = cinfo.output_height;
+				error:
+				jpeg_destroy_decompress(&cinfo);
+				fclose(infile);
+			}
+		}	
+
+		if( !width || !height )
+		{
+			free_metadata(&m, free_flags);
+			return 0;
+		}
+		if (width <= 160 && height <=160 )
+			m.dlna_pn = strdup("JPEG_TN");
+		if( width <= 640 && height <= 480 )
+			m.dlna_pn = strdup("JPEG_SM");
+		else if( width <= 1024 && height <= 768 )
+			m.dlna_pn = strdup("JPEG_MED");
+		else if( (width <= 4096 && height <= 4096) || !GETFLAG(DLNA_STRICT_MASK) )
+			m.dlna_pn = strdup("JPEG_LRG");
+	} 
+	else if ( ends_with(path, "png") || ends_with(path, "bmp") || 
+		ends_with(path, "tif") || ends_with(path, "tiff") ||
+		ends_with(path, "gif") )
+	{
+		int i;
+		int video_stream = -1;
+		AVFormatContext *ctx = NULL;
+		AVCodecContext *vc = NULL;
+			
+		ret = lav_open(&ctx, path);
+		if( ret != 0 )
+		{
+			char err[128];
+			av_strerror(ret, err, sizeof(err));
+			DPRINTF(E_WARN, L_METADATA, "Opening %s failed! [%s]\n", path, err);
+			free_metadata(&m, free_flags);
+			return 0;
+		}
+		for( i=0; i<ctx->nb_streams; i++)
+		{
+			if( ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO )
+			{
+				video_stream = i;
+				vc = ctx->streams[video_stream]->codec;
+				width = vc->width;
+				height = vc->height;
+				break;
+			}			
+		}
+
+		lav_close(ctx);
+		if (video_stream == -1 || !width || !height)
+		{
+			free_metadata(&m, free_flags);
+			return 0;
+		}
+
+		if ( ends_with(path, "png") )
+		{
+			if (width <= 160 && height <=160 )
+				m.dlna_pn = strdup("PNG_TN");
+			else if( (width <= 4096 && height <= 4096) || !GETFLAG(DLNA_STRICT_MASK) )
+				m.dlna_pn = strdup("PNG_LRG");
+		}
+		else if ( ends_with(path, "gif") )
+		{
+			if( (width <= 1600 && height <= 1200) || !GETFLAG(DLNA_STRICT_MASK) )
+				m.dlna_pn = strdup("GIF_LRG");
 		}
 	}
-	//DEBUG DPRINTF(E_DEBUG, L_METADATA, " * resolution: %dx%d\n", width, height);
-
-	if( !width || !height )
-	{
-		free_metadata(&m, free_flags);
-		return 0;
-	}
-	if( width <= 640 && height <= 480 )
-		m.dlna_pn = strdup("JPEG_SM");
-	else if( width <= 1024 && height <= 768 )
-		m.dlna_pn = strdup("JPEG_MED");
-	else if( (width <= 4096 && height <= 4096) || !GETFLAG(DLNA_STRICT_MASK) )
-		m.dlna_pn = strdup("JPEG_LRG");
+	
 	xasprintf(&m.resolution, "%dx%d", width, height);
 
 	ret = sql_exec(db, "INSERT into DETAILS"
@@ -845,6 +921,10 @@ GetVideoMetadata(const char *path, char *name)
 			xasprintf(&m.mime, "video/x-matroska");
 		else if( strcmp(ctx->iformat->name, "flv") == 0 )
 			xasprintf(&m.mime, "video/x-flv");
+		else if ( strcmp(ctx->iformat->name, "rm") == 0)
+			xasprintf(&m.mime, "video/x-pn-realvideo");
+		else if ( strcmp(ctx->iformat->name, "rmvb") == 0)
+			xasprintf(&m.mime, "video/x-pn-realvideo");
 		if( m.mime )
 			goto video_no_dlna;
 

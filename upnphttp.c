@@ -1548,6 +1548,8 @@ SendResp_thumbnail(struct upnphttp * h, char * object)
 	ExifData *ed;
 	ExifLoader *l;
 	struct string_s str;
+	char mime[16] = {0};
+	char dlna_pn[64] = {0};
 
 	if( h->reqflags & (FLAG_XFERSTREAMING|FLAG_RANGE) )
 	{
@@ -1590,10 +1592,21 @@ SendResp_thumbnail(struct upnphttp * h, char * object)
 
 	INIT_STR(str, header);
 
-	start_dlna_header(&str, 200, "Interactive", "image/jpeg");
+	if ( ends_with(path, "jpg") || ends_with(path, "jpeg") )
+	{
+		memcpy(mime, "image/jpeg", sizeof("image/jpeg"));
+		memcpy(dlna_pn, "JPEG_TN", sizeof("JPEG_TN"));
+	} 
+	else if ( ends_with(path, "png") )
+	{
+		memcpy(mime, "image/png", sizeof("image/png"));
+		memcpy(dlna_pn, "PNG_TN", sizeof("PNG_TN"));
+	}
+
+	start_dlna_header(&str, 200, "Interactive", mime);
 	strcatf(&str, "Content-Length: %jd\r\n"
-	              "contentFeatures.dlna.org: DLNA.ORG_PN=JPEG_TN;DLNA.ORG_CI=1\r\n\r\n",
-	              (intmax_t)ed->size);
+	              "contentFeatures.dlna.org: DLNA.ORG_PN=%s;DLNA.ORG_CI=1\r\n\r\n",
+	              (intmax_t)ed->size, dlna_pn);
 
 	if( send_data(h, str.data, str.off, MSG_MORE) == 0 )
 	{
@@ -1650,6 +1663,14 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 		return;
 	}
 
+	if ( !ends_with(file_path, "jpg")  && !ends_with(file_path, "jpeg"))
+	{
+		DPRINTF(E_WARN, L_HTTP, "******%s image format not support resizing.\n", file_path);
+		sqlite3_free_table(result);
+		Send501(h);
+		return;
+	}
+	
 	if( saveptr )
 		saveptr = strchr(saveptr, '?');
 	path = saveptr ? saveptr + 1 : object;

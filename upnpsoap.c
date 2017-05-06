@@ -965,7 +965,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 			ext = mime_to_ext(mime);
 			add_res(size, duration, bitrate, sampleFrequency, nrAudioChannels,
 			        resolution, dlna_buf, mime, detailID, ext, passed_args);
-			if( *mime == 'i' ) {
+			if( *mime == 'i' && strncmp(ext, "jpg", 3) == 0) {
 				int srcw, srch;
 				if( resolution && (sscanf(resolution, "%6dx%6d", &srcw, &srch) == 2) )
 				{
