@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <signal.h>
 
 #include "config.h"
 
@@ -959,4 +960,13 @@ start_scanner()
 	DPRINTF(E_DEBUG, L_SCANNER, "Initial file scan completed\n");
 	//JM: Set up a db version number, so we know if we need to rebuild due to a new structure.
 	sql_exec(db, "pragma user_version = %d;", DB_VERSION);
+}
+
+int
+stop_scanner(void)
+{
+    int ret = 0;
+    if (scanning && g_scanner_pid)
+        ret = kill(g_scanner_pid, SIGKILL);
+    return ret;
 }

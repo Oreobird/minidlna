@@ -83,4 +83,6 @@ CreateDatabase(void);
 void
 start_scanner();
 
+int
+stop_scanner(void);
 #endif

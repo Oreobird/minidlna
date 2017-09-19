@@ -167,6 +167,21 @@ sigusr1(int sig)
 }
 
 static void
+sigusr2(int sig)
+{
+    signal(sig, sigusr2);
+    DPRINTF(E_WARN, L_GENERAL, "received signal %d, rescan\n", sig);
+    
+    memset(&clients, '\0', sizeof(clients));
+    if (stop_scanner() == 0)
+    {
+        sleep(2);
+        rescan_db = 1;
+        start_scanner();
+    }
+}
+
+static void
 sighup(int sig)
 {
 	signal(sig, sighup);
@@ -969,6 +984,7 @@ init(int argc, char **argv)
 	if (signal(SIGHUP, &sighup) == SIG_ERR)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", "SIGHUP");
 	signal(SIGUSR1, &sigusr1);
+	signal(SIGUSR2, &sigusr2);
 	sa.sa_handler = process_handle_child_termination;
 	if (sigaction(SIGCHLD, &sa, NULL))
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", "SIGCHLD");
@@ -1015,7 +1031,6 @@ main(int argc, char **argv)
 	time_t lastupdatetime = 0;
 	int max_fd = -1;
 	int last_changecnt = 0;
-	pid_t scanner_pid = 0;
 	pthread_t inotify_thread = 0;
 #ifdef TIVO_SUPPORT
 	uint8_t beacon_interval = 5;
@@ -1047,7 +1062,7 @@ main(int argc, char **argv)
 		if (updateID == -1)
 			ret = -1;
 	}
-	check_db(db, ret, &scanner_pid);
+	check_db(db, ret, &g_scanner_pid);
 #ifdef HAVE_INOTIFY
 	if( GETFLAG(INOTIFY_MASK) )
 	{
@@ -1167,7 +1182,7 @@ main(int argc, char **argv)
 
 		if (scanning)
 		{
-			if (!scanner_pid || kill(scanner_pid, 0) != 0)
+			if (!g_scanner_pid || kill(g_scanner_pid, 0) != 0)
 			{
 				scanning = 0;
 				updateID++;
@@ -1308,8 +1323,8 @@ main(int argc, char **argv)
 
 shutdown:
 	/* kill the scanner */
-	if (scanning && scanner_pid)
-		kill(scanner_pid, SIGKILL);
+	if (scanning && g_scanner_pid)
+		kill(g_scanner_pid, SIGKILL);
 
 	/* close out open sockets */
 	while (upnphttphead.lh_first != NULL)
